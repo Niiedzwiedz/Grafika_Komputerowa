@@ -498,14 +498,8 @@ function Tick()
   uVMatrix = MatrixMul(uVMatrix,CreateTranslationMatrix(KameraPositionX,KameraPositionY,KameraPositionZ));
 
   let light = new Light("sphere.obj", LightPositionX, LightPositionY, LightPositionZ, LightSize, LightSize, LightSize);
-  let house1 = new Model("mediHouse.obj", 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 15);
-  let house2 = new Model("mediHouse2.obj", -1.0, -0.1, -2.0, 0.1, 0.1, 0.1, 30);
-  let house3 = new Model("mediHouse.obj", -2.0, 0.0, 1.0, 0.1, 0.1, 0.1, 12);
-  let house4 = new Model("mediHouse2.obj", 1.7, -0.1, -0.1, 0.1, 0.1, 0.1, 84);
-  let house5 = new Model("mediHouse.obj", -2.0, 0.0, -2.5, 0.1, 0.1, 0.1, 124);
-  let house6 = new Model("mediHouse2.obj", 1.0, -0.1, 1.0, 0.1, 0.1, 0.1, 252);
-  let house7 = new Model("mediHouse.obj", 1.5, 0.0, -2.5, 0.1, 0.1, 0.1, 62);
-  
+  let andrzej = new Model("andrzej.obj", 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 30);
+
   //alert(uPMatrix);
   
   //Render Scene
@@ -523,13 +517,7 @@ function Tick()
   gl.uniform1f(gl.getUniformLocation(shaderProgram, "uNormalMul"),1.0);
   gl.uniform3f(gl.getUniformLocation(shaderProgram, "uLightPosition"),LightPositionX,LightPositionY,LightPositionZ);
   
-  house1.renderSelf();
-  house2.renderSelf();
-  house3.renderSelf();
-  house4.renderSelf();
-  house5.renderSelf();
-  house6.renderSelf();
-  house7.renderSelf();
+  andrzej.renderSelf();
   light.renderSelf();
 
   setTimeout(Tick,100);
