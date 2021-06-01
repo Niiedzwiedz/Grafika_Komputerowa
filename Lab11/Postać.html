@@ -24,37 +24,53 @@ class Model{
   sy - scale y
   sz - scale z
   */
-  constructor(fp, px, py, pz, sx, sy, sz, ay = 0){
+  constructor(fp, px, py, pz, scale = 1.0, ay = 0){
     this.filePath = fp;
 
     this.positionX = px;
     this.positionY = py;
     this.positionZ = pz;
-    this.scaleX = sx;
-    this.scaleY = sy;
-    this.scaleZ = sz;
+    this.scale = scale;
 
     //calculate position of segments
     var leftArmPos = [px + 0.1, py + 0.0, pz - 0.8];
     var rightArmPos = [px + 0.1, py + 0.0, pz + 0.8];
 
     //ELEMENTS
-    this.leftArm  = new Arm(0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-    this.rightArm = new Arm(0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+    this.leftArm  = new Arm(-0.15, 2.15, 0.0, 0.0, this.scale, 0);
+    this.rightArm = new Arm(+0.19, 2.15, 0.0, 0.0, this.scale, 1);
 
     this.angleY = ay;
 
     this.uMMatrix = CreateIdentytyMatrix();
-    this.uMMatrix = MatrixMul(this.uMMatrix,CreateScaleMatrix(this.scaleX,this.scaleY ,this.scaleZ));
+    this.uMMatrix = MatrixMul(this.uMMatrix,CreateScaleMatrix(this.scale,this.scale ,this.scale));
     this.uMMatrix = MatrixMul(this.uMMatrix,CreateRotationYMatrix(this.angleY));
     this.uMMatrix = MatrixMul(this.uMMatrix,CreateTranslationMatrix(this.positionX,this.positionY,this.positionZ));  
   }
 
   renderSelf(){
     loadModel(this.filePath);
-    renderModel(this.uMMatrix, 352, 0);
-    renderModel(this.leftArm.uMMatrix1, 196, 352*2);
-    renderModel(this.rightArm.uMMatrix1, 196, (352+196)*2);
+    let offset = 0;
+
+    //TORSO
+    renderModel(this.uMMatrix, 352, offset*2);
+    offset += 352;
+
+    //LEFT ARM
+    renderModel(this.leftArm.uMMatrix3, 12, offset*2);  //dłoń
+    offset += 12;
+    renderModel(this.leftArm.uMMatrix2, 92, offset*2);  //przedramię
+    offset += 92;
+    renderModel(this.leftArm.uMMatrix1, 92, offset*2);  //ramię
+    offset += 92;
+
+    //RIGHT ARM
+    renderModel(this.rightArm.uMMatrix3, 12, offset*2);  //dłoń
+    offset += 12;
+    renderModel(this.rightArm.uMMatrix2, 92, offset*2);  //przedramię
+    offset += 92;
+    renderModel(this.rightArm.uMMatrix1, 92, offset*2);  //ramię
+    offset += 92;
   }
 
   update(){
@@ -68,47 +84,32 @@ class Model{
 //==========================================================================================//
 
 class Arm {
-  constructor(posX, posY, posZ, angleZ = 0.0, sizeX, sizeY, sizeZ){
+  constructor(posX, posY, posZ, angle = 0.0, scale = 1.0, mode = 0){
     //Position coordinates
     this.pos1X = posX;
     this.pos1Y = posY;
     this.pos1Z = posZ;
     this.pos2X = 0.0;
-    this.pos2Y = 0.0;
-    this.pos2Z = 0.0;
+    this.pos2Y = -0.36;
+    this.pos2Z = 0.15;
     this.pos3X = 0.0;
-    this.pos3Y = 0.0;
+    this.pos3Y = -0.42;
     this.pos3Z = 0.0;
 
-    //Angle
-    this.angle1Z = angleZ;
-    this.angle2Z = 10.0;
-    this.angle3Z = 5.0;
+    this.mode = mode //0 - left, 1 - right
 
-    this.angle1X = 0.0;
-    this.angle2X = 0.0;
-    this.angle3X = 0.0;
+    //Arm Angles
+    this.angle1 = angle;
+    this.angle2 = 0.0;
+    this.angle3 = 0.0;
 
     //Size scaling
-    this.size1X = sizeX;
-    this.size1Y = sizeY;
-    this.size1Z = sizeZ;
-    this.size2X = sizeX;
-    this.size2Y = sizeY;
-    this.size2Z = sizeZ;
-    this.size3X = sizeX*0.4;
-    this.size3Y = sizeY;
-    this.size3Z = sizeZ;
+    this.scale = scale;
 
     //Matrixes
     this.uMMatrix1 = CreateIdentytyMatrix();
     this.uMMatrix2 = CreateIdentytyMatrix();
     this.uMMatrix3 = CreateIdentytyMatrix();
-
-    //Colors
-    this.color1 = new Array(Math.random(), Math.random(), Math.random());
-    this.color2 = new Array(Math.random(), Math.random(), Math.random());
-    this.color3 = new Array(Math.random(), Math.random(), Math.random());
 
     this.update();
   }
@@ -119,45 +120,39 @@ class Arm {
     this.uMMatrix2 = CreateIdentytyMatrix();
     this.uMMatrix3 = CreateIdentytyMatrix();
 
-    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateScaleMatrix(this.size1X,this.size1Y,this.size1Z));
-    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateRotationZMatrix(this.angle1Z));
-    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateTranslationMatrix(this.pos1X,this.pos1Y,this.pos1Z));  
-    
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateScaleMatrix(this.size2X,this.size2Y,this.size2Z));
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationZMatrix(this.angle2Z));
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(this.pos2X,this.pos2Y,this.pos2Z));
-    
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(this.size1X,0.0,0.0)); 
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationZMatrix(this.angle1Z));
+    //Matrixes UM1
+    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateTranslationMatrix(-this.pos1X,-this.pos1Y,-this.pos1Z));
+    if(this.mode) this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateRotationZMatrix(-85));
+    else this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateRotationZMatrix(85));
+    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateRotationXMatrix(this.angle1));
+    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateTranslationMatrix(this.pos1X,this.pos1Y,this.pos1Z));
+    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateScaleMatrix(this.scale,this.scale,this.scale));
+
+    //Matrixes UM2
+
+    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(-this.pos1X,-this.pos1Y,-this.pos1Z));
+      if(this.mode) this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationZMatrix(-85));
+      else this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationZMatrix(85));
+      this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(-this.pos2X,-this.pos2Y,-this.pos2Z));
+        this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationXMatrix(this.angle2));
+      this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(this.pos2X,this.pos2Y,this.pos2Z));
+      this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationXMatrix(this.angle1));
     this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateTranslationMatrix(this.pos1X,this.pos1Y,this.pos1Z));
-    
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateScaleMatrix(this.size3X,this.size3Y,this.size3Z));
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationZMatrix(this.angle3Z));
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.pos3X,this.pos3Y,this.pos3Z));
-    
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.size2X,0.0,0.0)); 
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationZMatrix(this.angle2Z));
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.pos2X,this.pos2Y,this.pos2Z));
-    
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.size1X,0.0,0.0)); 
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationZMatrix(this.angle1Z));
+    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateScaleMatrix(this.scale,this.scale,this.scale));
+
+    //Matrixes UM3
+    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(-this.pos1X,-this.pos1Y,-this.pos1Z));
+      if(this.mode) this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationZMatrix(-85));
+      else this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationZMatrix(85));
+      this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(-this.pos2X,-this.pos2Y,-this.pos2Z));
+        this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(-this.pos3X,-this.pos3Y,-this.pos3Z));
+          this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationXMatrix(this.angle3));
+        this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.pos3X,this.pos3Y,this.pos3Z));
+        this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationXMatrix(this.angle2));
+      this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.pos2X,this.pos2Y,this.pos2Z));
+      this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationXMatrix(this.angle1));
     this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateTranslationMatrix(this.pos1X,this.pos1Y,this.pos1Z));
-
-    this.uMMatrix1 = MatrixMul(this.uMMatrix1,CreateRotationXMatrix(this.angle1X));
-    this.uMMatrix2 = MatrixMul(this.uMMatrix2,CreateRotationXMatrix(this.angle2X));
-    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateRotationXMatrix(this.angle3X));
-  }
-
-  move(x, y, z){
-    this.pos1X += x;
-    this.pos1Y += y;
-    this.pos1Z += z;
-  }
-
-  rotate(angle){
-    this.angle1X = angle;
-    this.angle2X = angle;
-    this.angle3X = angle;
+    this.uMMatrix3 = MatrixMul(this.uMMatrix3,CreateScaleMatrix(this.scale,this.scale,this.scale));
   }
 }
 
@@ -174,23 +169,22 @@ class Light{
   sy - scale y
   sz - scale z
   */
-  constructor(fp, px, py, pz, sx, sy, sz){
+  constructor(fp, px, py, pz, scale){
     this.filePath = fp;
 
     this.positionX = px;
     this.positionY = py;
     this.positionZ = pz;
-    this.scaleX = sx;
-    this.scaleY = sy;
-    this.scaleZ = sz;
+    this.scale = scale;
 
     this.uMMatrix = CreateIdentytyMatrix();
-    this.uMMatrix = MatrixMul(this.uMMatrix,CreateScaleMatrix(this.scaleX,this.scaleY ,this.scaleZ));
+    this.uMMatrix = MatrixMul(this.uMMatrix,CreateScaleMatrix(this.scale,this.scale ,this.scale));
     this.uMMatrix = MatrixMul(this.uMMatrix,CreateTranslationMatrix(this.positionX,this.positionY,this.positionZ));  
   }
 
   renderSelf(){
-    //renderModel(this.filePath, this.uMMatrix);
+    loadModel(this.filePath);
+    renderLight(this.uMMatrix);
   }
 }
 
@@ -532,34 +526,40 @@ function startGL()
     precision highp float;
     attribute vec3 aVertexPosition; 
     attribute vec3 aVertexNormal;
+    attribute vec2 aVertexCoord;
     uniform mat4 uMMatrix;
     uniform mat4 uInvMMatrix;
     uniform mat4 uVMatrix;
     uniform mat4 uPMatrix;
     varying vec3 vPos;
     varying vec3 vNormal;
+    varying vec2 vCoord;
     uniform float uNormalMul;
     void main(void) {
       vPos = vec3(uMMatrix * vec4(aVertexPosition, 1.0));
       gl_Position = uPMatrix * uVMatrix * vec4(vPos,1.0); //Dokonanie transformacji położenia punktów z przestrzeni 3D do przestrzeni obrazu (2D)
       vNormal = normalize(mat3(uInvMMatrix) * uNormalMul*aVertexNormal); //Obrot wektorow normalnych
+      vCoord = aVertexCoord;
     }
   `;
   const fragmentShaderSource = `
     precision highp float;
     varying vec3 vPos;
     varying vec3 vNormal;
+    varying vec2 vCoord;
     uniform sampler2D uSampler;
     uniform vec3 uLightPosition;
-    uniform vec3 uColor;
+    uniform vec3 uColor;    
     void main(void) {
-       vec3 lightDirection = normalize(uLightPosition - vPos);
-       float brightness = max(dot(vNormal,lightDirection), 0.0);
-      //gl_FragColor = vec4(uColor,1.0); //Ustalenie stałego koloru wszystkich punktów sceny
+      vec3 lightDirection = normalize(uLightPosition - vPos);
+      float brightness = max(dot(vNormal,lightDirection), 0.0);
+      //gl_FragColor = vec4(vColor,1.0); //Ustalenie stałego koloru wszystkich punktów sceny
       //gl_FragColor = texture2D(uSampler,vTexUV)*vec4(vColor,1.0); //Odczytanie punktu tekstury i przypisanie go jako koloru danego punktu renderowaniej figury
       //gl_FragColor = vec4((vNormal+vec3(1.0,1.0,1.0))/2.0,1.0); 
       //gl_FragColor = clamp(texture2D(uSampler,vTexUV) * vec4(brightness,brightness,brightness,1.0),0.0,1.0);
-      gl_FragColor = clamp(vec4(uColor,1.0) * vec4(brightness,brightness,brightness,1.0),0.0,1.0);
+      //gl_FragColor = clamp(vec4(uColor,1.0) * vec4(brightness,brightness,brightness,1.0),0.0,1.0);
+      gl_FragColor = clamp(texture2D(uSampler,vCoord)  * vec4(brightness,brightness,brightness,1.0),0.0,1.0);
+      //gl_FragColor = clamp(vec4(uColor,1.0) ,0.0,1.0);
     }
   `;
   let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER); //Stworzenie obiektu shadera 
@@ -583,7 +583,6 @@ function startGL()
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) alert("Could not initialise shaders");  //Sprawdzenie ewentualnych błedów
 
-
   //Macierze opisujące położenie wirtualnej kamery w przestrzenie 3D
   let aspect = gl.viewportWidth/gl.viewportHeight;
   let fov = 45.0 * Math.PI / 180.0; //Określenie pola widzenia kamery
@@ -605,34 +604,44 @@ function startGL()
 function loadModel(filepath){
   
   let [vP, iP, vN, iN, vT, iT] = importModel(filepath);
-  let [vertexPosition, vertexNormal, vertexTexture, indexes] = parseToIndex(vP, iP, vN, iN, vT, iT);
+  let [vertexPosition, vertexNormal, vertexCoord, indexes] = parseToIndex(vP, iP, vN, iN, vT, iT);
   
   vertexPositionBuffer = gl.createBuffer(); //Stworzenie tablicy w pamieci karty graficznej
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPosition), gl.STATIC_DRAW);
   vertexPositionBuffer.itemSize = 3; //zdefiniowanie liczby współrzednych per wierzchołek
-  vertexPositionBuffer.numItems = vertexPosition.length / 9; //Zdefinoiowanie liczby trójkątów w naszym buforze
+  vertexPositionBuffer.numItems = vertexPosition.length/9; //Zdefinoiowanie liczby trójkątów w naszym buforze
   
   vertexNormalBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormal), gl.STATIC_DRAW);
   vertexNormalBuffer.itemSize = 3;
-  vertexNormalBuffer.numItems = vertexNormal.length / 9;
+  vertexNormalBuffer.numItems = vertexNormal.length/9;
 
-  let vertexTextureBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexTextureBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexTexture), gl.STATIC_DRAW);
-  vertexTextureBuffer.itemSize = 2;
-  vertexTextureBuffer.numItems = vertexTexture.length / 6;
+  vertexCoordBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexCoordBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexCoord), gl.STATIC_DRAW);
+  vertexCoordBuffer.itemSize = 2;
+  vertexCoordBuffer.numItems = vertexCoord.length/6;
   
   indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexes), gl.STATIC_DRAW);
   indexBuffer.numItems = indexes.length;
 
-  //console.log(indexes.length);
+  textureBuffer = gl.createTexture();
+  var textureImg = new Image();
+  textureImg.onload = function() { //Wykonanie kodu automatycznie po załadowaniu obrazka
+    gl.bindTexture(gl.TEXTURE_2D, textureBuffer);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImg); //Faktyczne załadowanie danych obrazu do pamieci karty graficznej
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Ustawienie parametrów próbkowania tekstury
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  }
+  textureImg.src="golden-6-1x.png"; //Nazwa obrazka
 
-  return [indexes, vertexPosition, vertexNormal];
+  //console.log(indexes.length);
+  //return [indexes, vertexPosition, vertexNormal, vertexTexture];
 }
 
 //===========================================================================//
@@ -640,7 +649,7 @@ function loadModel(filepath){
 //===========================================================================//
 
 var angleZ = 0.0;
-var angleY = 0.0;
+var angleY = 135.0;
 var angleX = 0.0;
 var KameraPositionZ = -5.0;
 var KameraPositionX = 0.0;
@@ -651,7 +660,8 @@ var LightPositionX = 0;
 var LightPositionY = 3;
 var LightPositionZ = 0;
 
-let andrzej = new Model("andrzej.obj", 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0);
+let andrzej = new Model("andrzej.obj", 0.0, 0.0, 0.0);
+let light = new Light("sphere.obj", LightPositionX, LightPositionY, LightPositionZ, LightSize);
 
 //===========================================================================//
 //                                   TICK                                    //
@@ -664,13 +674,10 @@ function Tick()
   
   let uVMatrix = CreateIdentytyMatrix();
   
-  
   uVMatrix = MatrixMul(uVMatrix,CreateRotationXMatrix(angleX));
   uVMatrix = MatrixMul(uVMatrix,CreateRotationYMatrix(angleY));
   uVMatrix = MatrixMul(uVMatrix,CreateRotationZMatrix(angleZ));
   uVMatrix = MatrixMul(uVMatrix,CreateTranslationMatrix(KameraPositionX,KameraPositionY,KameraPositionZ));
-
-  let light = new Light("sphere.obj", LightPositionX, LightPositionY, LightPositionZ, LightSize, LightSize, LightSize);
 
   andrzej.update();
   //alert(uPMatrix);
@@ -691,9 +698,9 @@ function Tick()
   gl.uniform3f(gl.getUniformLocation(shaderProgram, "uLightPosition"),LightPositionX,LightPositionY,LightPositionZ);
   
   andrzej.renderSelf();
-  light.renderSelf();
+  //light.renderSelf();
 
-  setTimeout(Tick,100);
+  setTimeout(Tick,10);
 }
 
 //===========================================================================//
@@ -726,8 +733,9 @@ function renderModel(uMMatrix, amount = indexBuffer.numItems, offset = 0){
 //                                RENDER LIGHT                               //
 //===========================================================================//
 
-function renderLight(filePath, uMMatrix){
-  [indexes, vertexPosition, vertexNormal] = loadModel(filePath);
+function renderLight(uMMatrix, amount = indexBuffer.numItems, offset = 0){
+
+  if(amount - offset > indexBuffer.numItems) amount = indexBuffer.numItems - offset;
 
   gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
@@ -745,8 +753,8 @@ function renderLight(filePath, uMMatrix){
   gl.uniform3f(gl.getUniformLocation(shaderProgram, "uColor"),0.9,0.9,0.0);
   gl.uniform1f(gl.getUniformLocation(shaderProgram, "uNormalMul"),-1.0);  
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-  //gl.drawArrays(gl.TRIANGLES, 0, vertexPositionBuffer.numItems*vertexPositionBuffer.itemSize); //Faktyczne wywołanie rendrowania
-  gl.drawElements(gl.TRIANGLES, indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+  gl.drawElements(gl.TRIANGLES, amount*3, gl.UNSIGNED_SHORT, offset*3);
 }
 
 //===========================================================================//
@@ -775,32 +783,32 @@ function handlekeydown(e)
  
   //Z X
   if(e.keyCode==88){
-    andrzej.leftArm.angle1Z -= 1.0;
-    andrzej.rightArm.angle1Z -= 1.0;
+    andrzej.leftArm.angle1 -= 2.0;
+    andrzej.rightArm.angle1 -= 2.0;
  }
  if(e.keyCode==90){
-    andrzej.leftArm.angle1Z += 1.0;
-    andrzej.rightArm.angle1Z += 1.0;
+    andrzej.leftArm.angle1 += 2.0;
+    andrzej.rightArm.angle1 += 2.0;
  }
 
  //C V
  if(e.keyCode==67) {
-    andrzej.leftArm.angle2Z -= 1.0;
-    andrzej.rightArm.angle2Z -= 1.0;
+    andrzej.leftArm.angle2 -= 2.0;
+    andrzej.rightArm.angle2 -= 2.0;
  }
  if(e.keyCode==86) {
-    andrzej.leftArm.angle2Z += 1.0;
-    andrzej.rightArm.angle2Z += 1.0;
+    andrzej.leftArm.angle2 += 2.0;
+    andrzej.rightArm.angle2 += 2.0;
  }
  
  //B N
  if(e.keyCode==66) {
-  robot.leftArm.angle3Z -= 1.0;
-  robot.rightArm.angle3Z -= 1.0;
+  andrzej.leftArm.angle3 -= 2.0;
+  andrzej.rightArm.angle3 -= 2.0;
  }
  if(e.keyCode==78) {
-  robot.leftArm.angle3Z += 1.0;
-  robot.rightArm.angle3Z += 1.0;
+  andrzej.leftArm.angle3 += 2.0;
+  andrzej.rightArm.angle3 += 2.0;
  }
 }
 
